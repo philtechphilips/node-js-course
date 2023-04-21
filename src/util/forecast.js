@@ -1,8 +1,8 @@
 const request = require('request'); // Importing the request module
 
 // Defining the forecast function which takes latitude, longitude, and a callback function as parameters
-const forecast = (lat, lon, callback) => {
-    const url = 'http://api.weatherstack.com/current?access_key=50e09714886e14dafe34f5f115fbcbdd&query=' + lat + ',' + lon; // Weatherstack API URL with latitude and longitude as query parameters
+const forecast = (state, country, callback) => {
+    const url = 'http://api.weatherstack.com/current?access_key=50e09714886e14dafe34f5f115fbcbdd&query=' + state + ',' + country; // Weatherstack API URL with latitude and longitude as query parameters
 
     // Making a request to the Weatherstack API with the constructed URL
     request({ url, json: true }, (error, { body }) => {

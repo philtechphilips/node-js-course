@@ -52,28 +52,18 @@ app.get('/weather', (req, res) => {
         })
     }
 
-
-    // Calling geocode function with state and country, and providing a callback function to handle the response
-  geocode(state, country, (error, { lat, lon, location } = {}) => {
-    if (error) {
-        return res.send({error})
-    }
-
     // Calling forecast function with latitude and longitude obtained from geocode, and providing a callback function to handle the response
-    forecast(lat, lon, (error, forecastData) => {
+    forecast(state, country, (error, forecastData) => {
       if (error) {
         return res.send({error})
       }
-      console.log("Location:", location); // Printing location obtained from geocode
       console.log("Weather Data:", forecastData); // Printing weather data obtained from forecast
       res.send({
         forecast: forecastData,
-        location: location
+        location: 'Weather Condition in: ' + state + ' ' + country
       })
     });
   });
-
-})
 
 app.get('/help/*', (req, res) => {
     res.render('404', {
