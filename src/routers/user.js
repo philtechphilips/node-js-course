@@ -2,12 +2,17 @@ const express = require('express')
 const router = new express.Router()
 const User = require('../models/user')
 const auth = require('../middleware/auth') 
+const Task = require('../models/task')
+const multer = require('multer')
+const sharp = require('sharp')
+const { welcomeMail, cancelMail } = require('../emails/account')
 // Endpoint for creating a new user
 router.post('/users', async (req, res) => {
     const user = new User(req.body) // Creating a new User instance using the request body
 
     try{
         await user.save() // Saving the user to the database
+        welcomeMail(user.email, user.name)
         const token = await user.generateAuthToken()
         res.status(201).send({user, token}) // Sending a success response with the saved user object
     }catch (e){
@@ -145,12 +150,15 @@ router.delete('/user/:id', async (req, res) => {
 router.delete('/users/me', auth, async (req, res) => {
     try {
         // Find and delete the user by ID using Mongoose's findByIdAndDelete method
-        const user = await User.findByIdAndDelete(req.user._id)
-
+        const user = await User.findOneAndDelete({_id: req.user._id})
+        cancelMail(req.user.email, req.user.name)
         // If user is not found, send a 404 status and an empty response
         if (!user) {
             return res.status(404).send()
         }
+
+        // If user is found and deleted successfully, delete all tasks belonging to the user
+        await Task.deleteMany({ author: user._id });
 
         // If user is found and deleted successfully, send the deleted user object as response
         res.send(user)
@@ -160,4 +168,46 @@ router.delete('/users/me', auth, async (req, res) => {
     }
 })
 
+
+const upload = multer({
+    limits: {
+        fileSize: 1000000
+    },
+    fileFilter(req, file, cb) {
+       if(!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+            return cb(new Error('Please upload an image file!'))
+       }
+       cb(undefined, true)
+    }
+})
+
+router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
+    const buffer = await sharp(req.file.buffer).resize({ width: 250, height: 250 }).png().toBuffer()
+    req.user.avatar = buffer
+    await req.user.save()
+    res.send()
+}, (error, req, res, next) => {
+    res.status(400).send({ error: error.message })
+})
+
+router.delete('/users/me/avatar', auth, async (req, res) => {
+    req.user.avatar = undefined
+    await req.user.save()
+    res.send()
+})
+
+router.get('/users/:id/avatar', async (req, res) => {
+    try{
+        const user = await User.findById(req.params.id)
+
+        if(!user || !user.avatar){
+            throw new Error()
+        }
+
+        res.set('Content-Type', 'image/png')
+        res.send(user.avatar)
+    } catch (e) {
+        res.status(404).send()
+    }
+})
 module.exports = router
