@@ -6,25 +6,26 @@ require('dotenv').config();
 const userSchema = new mongoose.Schema({
     name:{
         type: String,
-        required: true,
+        required: [true, 'Name is required'],
         trim: true
     },
     email:{
         type: String,
-        unique: true,
-        required: true,
+        unique: [true, 'Email taken by another user!'],
+        required: [true, 'Email is required'],
         trim: true,
         lowercase: true,
-        validate(value){
-            if(!validator.isEmail(value)){
-                throw new Error('Email is invalid')
-            }
+        validate: {
+            validator: function(value) {
+                return validator.isEmail(value);
+            },
+            message: props => `Email is not a valid email address`
         }
     },
     password: {
         type: String,
-        required: true,
-        minlength: 7,
+        required: [true, 'Password is required'],
+        minlength: [7, 'Password must be greater than 6 character'],
         trim: true,
         validate (value) {
             if(value.toLowerCase().includes('password')){
@@ -83,13 +84,13 @@ userSchema.statics.findByCredentials = async (email, password) => {
     const user = await User.findOne({ email })
 
     if(!user){
-        throw new Error('Unable to login')
+        throw new Error('These credentials do not match our records.')
     }
 
     const isMatch = await bcrypt.compare(password, user.password)
 
     if(!isMatch){
-        throw new Error('Unable to Login')
+        throw new Error('These credentials do not match our records.')
     }
 
     return user

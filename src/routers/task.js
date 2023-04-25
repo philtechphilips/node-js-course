@@ -15,7 +15,11 @@ router.post('/tasks', auth, async (req, res) => {
         await task.save() // Saving the task to the database
         res.status(201).send(task) // Sending a success response with the saved task object
     }catch (e){
-        res.status(400).send(e) // Sending an error response with the error object
+        if (e.code === 11000) {
+            res.status(422).json({ error: 'Duplicate task detected!' }); // sending an error response as JSON with the error message
+        }else{
+            res.status(400).send(e) // Sending an error response with the error object
+        } 
     }
 })
 

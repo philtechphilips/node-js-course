@@ -6,28 +6,43 @@ const Task = require('../models/task')
 const multer = require('multer')
 const sharp = require('sharp')
 const { welcomeMail, cancelMail } = require('../emails/account')
+const cors = require('cors');
+
+router.use(cors());
+
+router.use(cors({
+    origin: '*'
+  }));
+
+
 // Endpoint for creating a new user
 router.post('/users', async (req, res) => {
     const user = new User(req.body) // Creating a new User instance using the request body
-
     try{
         await user.save() // Saving the user to the database
         welcomeMail(user.email, user.name)
         const token = await user.generateAuthToken()
         res.status(201).send({user, token}) // Sending a success response with the saved user object
     }catch (e){
-        res.status(400).send(e) // Sending an error response with the error object
+        if (e.code === 11000) {
+            res.status(422).json({ error: 'Email address is already taken' }); // sending an error response as JSON with the error message
+        }else{
+            res.status(400).send(e) // Sending an error response with the error object
+        } 
     }
 })
 
 
 router.post('/users/login', async (req, res) => {
     try{
+        if (!req.body.email || !req.body.password) {
+            throw new Error('Email and password are required')
+        }
         const user = await User.findByCredentials(req.body.email, req.body.password)
         const token = await user.generateAuthToken()
-        res.send({user, token})
+        res.status(201).send({user, token})
     } catch (e) {
-        res.status(400).send()
+        res.status(400).send(e.message)
     }
 })
 

@@ -3,8 +3,9 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
     description: {
         type: String,
-        required: true,
-        trim: true
+        required: [true, 'Description is required!'],
+        trim: true,
+        unique: [true, 'Duplicate task detected!'],
     },
     completed: {
         type: Boolean,
