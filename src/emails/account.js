@@ -28,25 +28,11 @@ const welcomeMail = (email, name) => {
 
 const cancelMail = (email, name) => {
     let mailOptions = {
-        from: 'pelumiisola87@gmail.com',
+        from: process.env.EMAIL,
         to: email,
         subject: 'Sorry to see you go!',
         text: `Goodbye, ${name}. I hope to see you sometime soon.`
     };
-    
-    transporter.sendMail(mailOptions, function(error, info){
-        if (error) {
-            console.log(error);
-        } else {
-            console.log('Email sent: ' + info.response);
-        }
-    });
-}
-
-module.exports = { 
-    welcomeMail,
-    cancelMail
-}
     
     transporter.sendMail(mailOptions, function(error, info){
         if (error) {
